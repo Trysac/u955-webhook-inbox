@@ -1,0 +1,20 @@
+# Bundler: gems install into GEM_HOME, never into the repository
+/.bundle/
+/vendor/
+
+# Tool caches and reports
+/coverage/
+/.yardoc/
+/doc/
+/pkg/
+*.gem
+.rspec_status
+
+# IDE
+.idea/
+.vscode/
+
+# Local environment
+.env
+.env.*
+!.env.example

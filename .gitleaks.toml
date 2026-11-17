@@ -1,0 +1,12 @@
+# gitleaks configuration: default rules plus local-only paths that are never committed.
+title = "webhook-inbox gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Bundler and local tool output (ignored by git)"
+paths = [
+  '''(^|/)vendor/''',
+  '''(^|/)(\.bundle|\.yardoc|coverage|doc|pkg)/''',
+]

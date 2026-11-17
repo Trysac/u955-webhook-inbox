@@ -1,0 +1,16 @@
+# webhook-inbox
+
+> Rack webhook inbox that captures, inspects and forwards requests with byte-exact bodies and preserved headers, signed with Standard Webhooks HMAC-SHA256 signatures Gem `u955-webhook-inbox`, module `Trysac::WebhookInbox`, MIT licensed, Ruby >= 4.0,
+> standard library only.
+
+## Docs
+
+- [README](README.md): problem, install, usage example
+- [AGENTS](AGENTS.md): commands, folder map, conventions, limits
+- [Architecture](docs/ARCHITECTURE.md): shape of the library and its public API
+- [Testing](docs/TESTING.md): how to run and extend the specs
+
+## Optional
+
+- [Stack](docs/STACK.md): tools used and discarded
+- [Changelog](CHANGELOG.md): release history

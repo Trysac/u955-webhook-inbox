@@ -1,0 +1,44 @@
+# Factory-owned file: agents must not edit it. RuboCop is both gates: its Layout cops are the format gate and every
+# other cop is the lint gate; any offense fails. Disabling a cop inline (`# rubocop:disable`) is itself an offense
+# (Style/DisableCopsWithinSourceCodeDirective).
+plugins:
+  - rubocop-rspec
+
+AllCops:
+  TargetRubyVersion: 4.0
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - "vendor/**/*"
+    - ".bundle/**/*"
+
+# Every repository is LF (.gitattributes); the default `native` demands CRLF on the Windows CI runner (u954).
+Layout/EndOfLine:
+  EnforcedStyle: lf
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Style/StringLiteralsInInterpolation:
+  EnforcedStyle: double_quotes
+
+Style/DisableCopsWithinSourceCodeDirective:
+  Enabled: true
+
+Layout/LineLength:
+  Max: 120
+
+# The factory's gate scripts are long, linear procedures.
+Metrics:
+  Exclude:
+    - "scripts/**/*"
+
+RSpec/ExampleLength:
+  Max: 10
+
+RSpec/MultipleExpectations:
+  Max: 3
+
+# Property and conformance specs describe an invariant or a tier, not a class.
+RSpec/DescribeClass:
+  Enabled: false

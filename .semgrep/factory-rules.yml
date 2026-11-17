@@ -1,0 +1,88 @@
+# Semgrep CE rules owned by the factory (MIT, like this repository). The semgrep gate in scripts/check.rb runs only
+# this file; Semgrep-maintained registry rules are never used (their license forbids distribution and service use).
+# Every rule is ERROR: a match fails the gate. Factory-owned file: agents must not edit it.
+rules:
+  - id: fabrica.ruby.code-eval
+    languages: [ruby]
+    severity: ERROR
+    message: eval, instance_eval, class_eval and module_eval on a string run their input as Ruby code. Interpret the input explicitly instead.
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: Kernel.eval(...)
+      - pattern: binding.eval(...)
+      - patterns:
+          - pattern-either:
+              - pattern: $X.instance_eval($CODE, ...)
+              - pattern: $X.class_eval($CODE, ...)
+              - pattern: $X.module_eval($CODE, ...)
+          - pattern-not: $X.$EVAL("...", ...)
+  - id: fabrica.ruby.shell-exec
+    languages: [ruby]
+    severity: ERROR
+    message: Running a command line built from data (backticks or %x with interpolation, or system, exec, spawn, IO.popen or Open3 with one interpolated string) goes through /bin/sh and allows command injection. Pass the program and its arguments as separate strings instead.
+    pattern-either:
+      - pattern: "`...#{...}...`"
+      - patterns:
+          - pattern-either:
+              - pattern: system($CMD)
+              - pattern: exec($CMD)
+              - pattern: spawn($CMD)
+              - pattern: Kernel.system($CMD)
+              - pattern: Process.spawn($CMD)
+              - pattern: IO.popen($CMD, ...)
+              - pattern: Open3.capture2($CMD)
+              - pattern: Open3.capture2e($CMD)
+              - pattern: Open3.capture3($CMD)
+              - pattern: Open3.popen3($CMD)
+          - pattern-not: $F("...")
+          - pattern-not: $M.$F("...", ...)
+          - pattern-not: IO.popen([...], ...)
+  - id: fabrica.ruby.unsafe-deserialization
+    languages: [ruby]
+    severity: ERROR
+    message: Marshal.load and YAML.load/Psych.load with unsafe options can instantiate any class from the input (object injection). Use JSON.parse, or YAML.safe_load with explicit permitted classes.
+    pattern-either:
+      - pattern: Marshal.load(...)
+      - pattern: Marshal.restore(...)
+      - pattern: YAML.unsafe_load(...)
+      - pattern: Psych.unsafe_load(...)
+      - pattern: YAML.unsafe_load_file(...)
+      - pattern: Psych.unsafe_load_file(...)
+      - pattern: Oj.load(...)
+    # YAML.load itself is YAML.safe_load since Psych 4 (Ruby 3.1): only the unsafe_ variants instantiate classes.
+  - id: fabrica.ruby.dynamic-send
+    languages: [ruby]
+    severity: ERROR
+    message: send, public_send or __send__ with a method name that is not a literal symbol lets the input choose which method runs (including private ones). Dispatch over an explicit list of allowed names instead.
+    patterns:
+      - pattern-either:
+          - pattern: $X.send($M, ...)
+          - pattern: $X.__send__($M, ...)
+          - pattern: $X.public_send($M, ...)
+          - pattern: send($M, ...)
+          - pattern: public_send($M, ...)
+      - pattern-not: $X.send(:$SYM, ...)
+      - pattern-not: $X.__send__(:$SYM, ...)
+      - pattern-not: $X.public_send(:$SYM, ...)
+      - pattern-not: send(:$SYM, ...)
+      - pattern-not: public_send(:$SYM, ...)
+  - id: fabrica.ruby.tls-verification-disabled
+    languages: [ruby]
+    severity: ERROR
+    message: TLS certificate verification is disabled (VERIFY_NONE), so any server can impersonate the real one.
+    pattern-either:
+      - pattern: OpenSSL::SSL::VERIFY_NONE
+      - pattern: "$X.verify_mode = 0"
+      - pattern: "{..., verify_mode: 0, ...}"
+      - pattern: "{..., ssl_verify: false, ...}"
+      - pattern: "{..., ssl: {..., verify: false, ...}, ...}"
+  - id: fabrica.ruby.hardcoded-secret
+    languages: [ruby]
+    severity: ERROR
+    message: A credential (private key, AKIA access key, GitHub, Slack or Stripe token) is hard-coded in the source. Read it from the environment.
+    pattern-either:
+      - pattern-regex: -----BEGIN (RSA |EC |DSA |OPENSSH |ENCRYPTED )?PRIVATE KEY-----
+      - pattern-regex: \b(AKIA|ASIA)[0-9A-Z]{16}\b
+      - pattern-regex: \bgh[pousr]_[A-Za-z0-9]{36}\b
+      - pattern-regex: \bxox[baprs]-[A-Za-z0-9-]{10,}\b
+      - pattern-regex: \bsk_live_[A-Za-z0-9]{24,}\b
