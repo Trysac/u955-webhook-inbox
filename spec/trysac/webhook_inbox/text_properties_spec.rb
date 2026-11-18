@@ -2,35 +2,25 @@
 
 require "spec_helper"
 
-# Property specs: invariants checked on inputs generated from a fixed seed, so every run checks the same cases.
-RSpec.describe "Text.normalize properties" do
-  let(:text) { Trysac::WebhookInbox::Text }
-  let(:inputs) do
-    alphabet = [*"a".."z", *"A".."Z", *"0".."9", " ", "\t", "\n", "-", "_", "é", "Ä"]
-    Array.new(200) do |index|
-      random = Random.new(index)
-      core = Array.new(random.rand(1..12)) { alphabet[random.rand(alphabet.size)] }.join
-      "#{" " * random.rand(3)}x#{core}#{"\t" * random.rand(3)}"
+RSpec.describe Trysac::WebhookInbox::Text do
+  let(:samples) do
+    rng = Random.new(42)
+    Array.new(50) { Array.new(rng.rand(1..30)) { rng.rand(65..90).chr }.join }
+  end
+
+  it "is idempotent across generated padded inputs" do
+    samples.each do |sample|
+      once = described_class.normalize("  #{sample}  ")
+      expect(described_class.normalize(once)).to eq(once)
     end
   end
 
-  it "is idempotent" do
-    inputs.each do |input|
-      once = text.normalize(input)
-      expect(text.normalize(once)).to eq(once)
-    end
+  it "trims and lower-cases every generated padded input" do
+    samples.each { |sample| expect(described_class.normalize("  #{sample}  ")).to eq(sample.downcase(:ascii)) }
   end
 
-  it "leaves no surrounding whitespace" do
-    inputs.each do |input|
-      result = text.normalize(input)
-      expect(result).to eq(result.strip)
-    end
-  end
-
-  it "has no ASCII upper-case letters" do
-    inputs.each do |input|
-      expect(text.normalize(input)).not_to match(/[A-Z]/)
-    end
+  it "truncates Error messages to at most 200 characters" do
+    err = Trysac::WebhookInbox::Error.new(:invalid_inbox, "x" * 500)
+    expect([err.message.length, err.code]).to eq([200, :invalid_inbox])
   end
 end

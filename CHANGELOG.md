@@ -9,4 +9,5 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Added `Trysac::WebhookInbox` Rack 3 application, bounded thread-safe `Store`, `Signer` (Standard Webhooks v1 HMAC-SHA256), `Forwarder` with `RawHttpClient` and `FakeHttpClient`, escaped ERB `Views`, and `CLI`.
 - Initial project structure from the factory utility template.
